@@ -4,7 +4,48 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Linux Terminal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
+    :root {
+      /* Window chrome */
+      --window-bg: rgba(30, 30, 30, 0.98);
+      --window-border: rgba(255, 255, 255, 0.1);
+      --window-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 
+                       0 0 0 1px rgba(255, 255, 255, 0.05);
+      --window-radius: 12px;
+      
+      /* Title bar */
+      --titlebar-bg: rgba(45, 45, 45, 0.95);
+      --titlebar-border: rgba(255, 255, 255, 0.06);
+      --title-color: rgba(255, 255, 255, 0.7);
+      
+      /* Traffic lights */
+      --btn-close: #ff5f56;
+      --btn-minimize: #ffbd2e;
+      --btn-maximize: #27c93f;
+      --btn-inactive: #3a3a3a;
+      
+      /* Terminal */
+      --terminal-bg: #1a1a1a;
+      --terminal-fg: #e5e5e5;
+      --terminal-cursor: #5af78e;
+      --terminal-selection: rgba(90, 247, 142, 0.25);
+      
+      /* Status bar */
+      --statusbar-bg: #252525;
+      --statusbar-fg: rgba(255, 255, 255, 0.5);
+      --statusbar-accent: #5af78e;
+      --statusbar-warning: #ffbd2e;
+      --statusbar-error: #ff5f56;
+      
+      /* Scrollbar */
+      --scrollbar-track: transparent;
+      --scrollbar-thumb: rgba(255, 255, 255, 0.15);
+      --scrollbar-thumb-hover: rgba(255, 255, 255, 0.25);
+    }
+
     * {
       margin: 0;
       padding: 0;
@@ -15,7 +56,148 @@
       width: 100%;
       height: 100%;
       overflow: hidden;
-      background: #000;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    /* Animated background pattern */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: 
+        radial-gradient(circle at 20% 80%, rgba(90, 247, 142, 0.03) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(90, 120, 247, 0.03) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Terminal window container */
+    .terminal-window {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      right: 20px;
+      bottom: 20px;
+      background: var(--window-bg);
+      border-radius: var(--window-radius);
+      box-shadow: var(--window-shadow);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      z-index: 1;
+      border: 1px solid var(--window-border);
+    }
+
+    /* Title bar */
+    .title-bar {
+      height: 52px;
+      background: var(--titlebar-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--titlebar-border);
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      position: relative;
+      flex-shrink: 0;
+      user-select: none;
+    }
+
+    /* Traffic light buttons */
+    .traffic-lights {
+      display: flex;
+      gap: 8px;
+      z-index: 1;
+    }
+
+    .traffic-lights .btn {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      position: relative;
+      transition: all 0.15s ease;
+      cursor: default;
+    }
+
+    .traffic-lights .btn.close {
+      background: var(--btn-close);
+      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15);
+    }
+
+    .traffic-lights .btn.minimize {
+      background: var(--btn-minimize);
+      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15);
+    }
+
+    .traffic-lights .btn.maximize {
+      background: var(--btn-maximize);
+      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Show icons on hover */
+    .terminal-window:hover .traffic-lights .btn::after {
+      opacity: 1;
+    }
+
+    .traffic-lights .btn::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+
+    .traffic-lights .btn.close::after {
+      content: '×';
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(0, 0, 0, 0.5);
+      line-height: 1;
+    }
+
+    .traffic-lights .btn.minimize::after {
+      content: '−';
+      font-size: 14px;
+      font-weight: 600;
+      color: rgba(0, 0, 0, 0.5);
+      line-height: 1;
+    }
+
+    .traffic-lights .btn.maximize::after {
+      content: '+';
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(0, 0, 0, 0.5);
+      line-height: 1;
+    }
+
+    .traffic-lights .btn:hover {
+      filter: brightness(1.1);
+    }
+
+    /* Title text */
+    .title {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      color: var(--title-color);
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.3px;
+    }
+
+    /* Terminal container */
+    #terminal-container {
+      flex: 1;
+      background: var(--terminal-bg);
+      position: relative;
+      overflow: hidden;
     }
 
     #terminal {
@@ -26,47 +208,238 @@
     /* Make xterm fill the container */
     .xterm {
       height: 100%;
-      padding: 8px;
+      padding: 12px 16px;
     }
 
     .xterm-viewport {
       overflow-y: auto !important;
     }
 
+    /* Custom scrollbar */
+    .xterm-viewport::-webkit-scrollbar {
+      width: 10px;
+      background: var(--scrollbar-track);
+    }
+
+    .xterm-viewport::-webkit-scrollbar-track {
+      background: var(--scrollbar-track);
+    }
+
+    .xterm-viewport::-webkit-scrollbar-thumb {
+      background: var(--scrollbar-thumb);
+      border-radius: 5px;
+      border: 2px solid transparent;
+      background-clip: content-box;
+    }
+
+    .xterm-viewport::-webkit-scrollbar-thumb:hover {
+      background: var(--scrollbar-thumb-hover);
+      background-clip: content-box;
+    }
+
+    /* Status bar */
+    .status-bar {
+      height: 28px;
+      background: var(--statusbar-bg);
+      border-top: 1px solid var(--titlebar-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 12px;
+      font-size: 11px;
+      color: var(--statusbar-fg);
+      font-family: 'JetBrains Mono', 'SF Mono', monospace;
+      flex-shrink: 0;
+    }
+
+    .status-left, .status-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--statusbar-accent);
+      box-shadow: 0 0 6px var(--statusbar-accent);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    .status-dot.warning {
+      background: var(--statusbar-warning);
+      box-shadow: 0 0 6px var(--statusbar-warning);
+    }
+
+    .status-dot.error {
+      background: var(--statusbar-error);
+      box-shadow: 0 0 6px var(--statusbar-error);
+      animation: none;
+    }
+
+    .status-dot.connecting {
+      animation: blink 0.8s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
     /* Loading overlay */
     #loading {
-      position: fixed;
+      position: absolute;
       top: 0;
       left: 0;
       right: 0;
       bottom: 0;
-      background: #000;
-      color: #0f0;
+      background: var(--terminal-bg);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      font-family: monospace;
-      font-size: 16px;
       z-index: 1000;
+      transition: opacity 0.5s ease, visibility 0.5s ease;
     }
 
     #loading.hidden {
-      display: none;
+      opacity: 0;
+      visibility: hidden;
     }
 
-    .spinner {
-      width: 40px;
-      height: 40px;
-      border: 3px solid #333;
-      border-top-color: #0f0;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin-bottom: 20px;
+    .boot-container {
+      max-width: 600px;
+      width: 90%;
+      font-family: 'JetBrains Mono', 'SF Mono', monospace;
     }
 
-    @keyframes spin {
-      to { transform: rotate(360deg); }
+    .boot-logo {
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    .boot-logo pre {
+      color: var(--terminal-cursor);
+      font-size: 10px;
+      line-height: 1.2;
+      margin: 0;
+      display: inline-block;
+      text-shadow: 0 0 10px var(--terminal-cursor);
+    }
+
+    .boot-messages {
+      font-size: 12px;
+      line-height: 1.6;
+      color: var(--terminal-fg);
+      min-height: 200px;
+    }
+
+    .boot-message {
+      opacity: 0;
+      transform: translateY(5px);
+      animation: fadeInUp 0.3s ease forwards;
+    }
+
+    .boot-message .ok {
+      color: var(--terminal-cursor);
+    }
+
+    .boot-message .info {
+      color: #5ab0f7;
+    }
+
+    .boot-message .warn {
+      color: var(--statusbar-warning);
+    }
+
+    .boot-message .dim {
+      opacity: 0.5;
+    }
+
+    @keyframes fadeInUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .boot-cursor {
+      display: inline-block;
+      width: 8px;
+      height: 14px;
+      background: var(--terminal-cursor);
+      animation: cursorBlink 1s step-end infinite;
+      vertical-align: middle;
+      margin-left: 2px;
+    }
+
+    @keyframes cursorBlink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    /* Progress bar */
+    .boot-progress {
+      margin-top: 24px;
+      height: 3px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .boot-progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--terminal-cursor), #5ab0f7);
+      width: 0%;
+      transition: width 0.3s ease;
+      box-shadow: 0 0 10px var(--terminal-cursor);
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .terminal-window {
+        top: 10px;
+        left: 10px;
+        right: 10px;
+        bottom: 10px;
+        border-radius: 8px;
+      }
+
+      .title-bar {
+        height: 44px;
+        padding: 0 12px;
+      }
+
+      .traffic-lights .btn {
+        width: 12px;
+        height: 12px;
+      }
+
+      .title {
+        font-size: 12px;
+      }
+
+      .status-bar {
+        height: 24px;
+        font-size: 10px;
+        padding: 0 8px;
+      }
+
+      .xterm {
+        padding: 8px 12px;
+      }
     }
   </style>
 
@@ -83,39 +456,222 @@
   </script>
 </head>
 <body>
-  <div id="loading">
-    <div class="spinner"></div>
-    <div id="loading-text">Loading Linux kernel...</div>
+  <div class="terminal-window">
+    <!-- Title Bar -->
+    <div class="title-bar">
+      <div class="traffic-lights">
+        <span class="btn close"></span>
+        <span class="btn minimize"></span>
+        <span class="btn maximize"></span>
+      </div>
+      <div class="title">Linux Terminal</div>
+    </div>
+
+    <!-- Terminal Container -->
+    <div id="terminal-container">
+      <div id="loading">
+        <div class="boot-container">
+          <div class="boot-logo">
+            <pre>
+    ╦  ╦╔╗╔╦ ╦═╗ ╦  ╦ ╦╔═╗╔═╗╔╦╗
+    ║  ║║║║║ ║╔╩╦╝  ║║║╠═╣╚═╗║║║
+    ╩═╝╩╝╚╝╚═╝╩ ╚═  ╚╩╝╩ ╩╚═╝╩ ╩</pre>
+          </div>
+          <div class="boot-messages" id="boot-messages"></div>
+          <div class="boot-progress">
+            <div class="boot-progress-bar" id="boot-progress"></div>
+          </div>
+        </div>
+      </div>
+      <div id="terminal"></div>
+    </div>
+
+    <!-- Status Bar -->
+    <div class="status-bar">
+      <div class="status-left">
+        <div class="status-item" id="status-connection">
+          <span class="status-dot connecting"></span>
+          <span>Connecting...</span>
+        </div>
+        <div class="status-item" id="status-fs">
+          <span class="status-dot warning"></span>
+          <span>FS: Loading</span>
+        </div>
+      </div>
+      <div class="status-right">
+        <div class="status-item" id="status-size">
+          <span>--×--</span>
+        </div>
+        <div class="status-item" id="status-time">
+          <span>--:--</span>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <div id="terminal"></div>
-
   <script>
+    // Boot sequence messages
+    const bootMessages = [
+      { text: '[    0.000000] Linux version 6.1.0-wasm', delay: 100 },
+      { text: '[    0.000000] Command line: maxcpus=3 root=/dev/ram0', delay: 150, class: 'dim' },
+      { text: '[    0.001234] CPU: WebAssembly virtual processor', delay: 200 },
+      { text: '[    0.002000] Memory: 256MB available', delay: 250 },
+      { text: '[    0.003500] <span class="ok">[  OK  ]</span> Mounted devtmpfs', delay: 400 },
+      { text: '[    0.004200] <span class="ok">[  OK  ]</span> Started udev daemon', delay: 500 },
+      { text: '[    0.005100] <span class="info">[INFO ]</span> Initializing network stack...', delay: 650 },
+      { text: '[    0.006000] <span class="ok">[  OK  ]</span> Network interface configured', delay: 800 },
+      { text: '[    0.007500] <span class="info">[INFO ]</span> Loading initramfs...', delay: 950 },
+      { text: '[    0.009000] <span class="ok">[  OK  ]</span> Filesystem mounted', delay: 1100 },
+      { text: '[    0.010000] <span class="ok">[  OK  ]</span> Starting init process...', delay: 1300 },
+    ];
+
+    // Status bar update functions
+    function updateTime() {
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2, '0');
+      const mins = String(now.getMinutes()).padStart(2, '0');
+      const secs = String(now.getSeconds()).padStart(2, '0');
+      document.querySelector('#status-time span').textContent = `${hours}:${mins}:${secs}`;
+    }
+
+    function updateTerminalSize(cols, rows) {
+      document.querySelector('#status-size span').textContent = `${cols}×${rows}`;
+    }
+
+    function updateConnectionStatus(status, message) {
+      const el = document.getElementById('status-connection');
+      const dot = el.querySelector('.status-dot');
+      const text = el.querySelector('span:last-child');
+      
+      dot.className = 'status-dot';
+      if (status === 'connected') {
+        text.textContent = message || 'Connected';
+      } else if (status === 'connecting') {
+        dot.classList.add('connecting');
+        text.textContent = message || 'Connecting...';
+      } else if (status === 'error') {
+        dot.classList.add('error');
+        text.textContent = message || 'Disconnected';
+      } else if (status === 'warning') {
+        dot.classList.add('warning');
+        text.textContent = message || 'Limited';
+      }
+    }
+
+    function updateFsStatus(status, message) {
+      const el = document.getElementById('status-fs');
+      const dot = el.querySelector('.status-dot');
+      const text = el.querySelector('span:last-child');
+      
+      dot.className = 'status-dot';
+      if (status === 'synced') {
+        text.textContent = message || 'FS: Synced';
+      } else if (status === 'syncing') {
+        dot.classList.add('connecting');
+        text.textContent = message || 'FS: Syncing...';
+      } else if (status === 'error') {
+        dot.classList.add('error');
+        text.textContent = message || 'FS: Error';
+      } else if (status === 'warning') {
+        dot.classList.add('warning');
+        text.textContent = message || 'FS: Not available';
+      }
+    }
+
+    // Boot animation
+    async function runBootSequence() {
+      const messagesEl = document.getElementById('boot-messages');
+      const progressBar = document.getElementById('boot-progress');
+      
+      for (let i = 0; i < bootMessages.length; i++) {
+        const msg = bootMessages[i];
+        await new Promise(resolve => setTimeout(resolve, msg.delay - (i > 0 ? bootMessages[i-1].delay : 0)));
+        
+        const msgEl = document.createElement('div');
+        msgEl.className = 'boot-message' + (msg.class ? ' ' + msg.class : '');
+        msgEl.innerHTML = msg.text;
+        messagesEl.appendChild(msgEl);
+        
+        // Update progress
+        const progress = ((i + 1) / bootMessages.length) * 100;
+        progressBar.style.width = progress + '%';
+        
+        // Auto-scroll
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      }
+      
+      // Add blinking cursor at end
+      const cursorEl = document.createElement('span');
+      cursorEl.className = 'boot-cursor';
+      messagesEl.appendChild(cursorEl);
+    }
+
+    // Update time every second
+    setInterval(updateTime, 1000);
+    updateTime();
+
     document.addEventListener("DOMContentLoaded", async () => {
       const loadingEl = document.getElementById("loading");
-      const loadingText = document.getElementById("loading-text");
+      const terminalContainer = document.getElementById("terminal-container");
+      const terminalWindow = document.querySelector(".terminal-window");
 
-      // Calculate terminal size based on viewport
-      const charWidth = 9;  // approximate character width in pixels
-      const charHeight = 17; // approximate character height in pixels
-      const padding = 16; // 8px padding on each side
+      // Start boot animation
+      runBootSequence();
 
-      const cols = Math.floor((window.innerWidth - padding) / charWidth);
-      const rows = Math.floor((window.innerHeight - padding) / charHeight);
+      // Calculate terminal size based on available space
+      // Font size 14px with lineHeight 1.2 = ~17px per line, but actual rendering adds a bit more
+      const charWidth = 8.4; // JetBrains Mono is slightly narrower
+      const charHeight = 17.5; // Account for lineHeight and font metrics
+      const paddingH = 32; // 16px padding on each side
+      const paddingV = 24; // 12px padding top/bottom
+      
+      // Account for: title bar (52px), status bar (28px)
+      const titleBarHeight = 52;
+      const statusBarHeight = 28;
+      
+      const availableWidth = terminalWindow.clientWidth;
+      const availableHeight = terminalWindow.clientHeight - titleBarHeight - statusBarHeight;
+
+      const cols = Math.floor((availableWidth - paddingH) / charWidth);
+      const rows = Math.floor((availableHeight - paddingV) / charHeight) - 2; // Subtract 2 rows for safety
+
+      updateTerminalSize(cols, rows);
 
       const term = new Terminal({
         cols: cols,
         rows: rows,
         cursorBlink: true,
         cursorStyle: 'block',
-        fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+        fontFamily: '"JetBrains Mono", "SF Mono", "Fira Code", Menlo, Monaco, "Courier New", monospace',
         fontSize: 14,
+        lineHeight: 1.2,
+        letterSpacing: 0,
+        fontWeight: '400',
+        fontWeightBold: '500',
+        allowTransparency: true,
         theme: {
-          background: '#000000',
-          foreground: '#00ff00',
-          cursor: '#00ff00',
-          cursorAccent: '#000000',
-          selectionBackground: '#00ff0040'
+          background: '#1a1a1a',
+          foreground: '#e5e5e5',
+          cursor: '#5af78e',
+          cursorAccent: '#1a1a1a',
+          selectionBackground: 'rgba(90, 247, 142, 0.25)',
+          selectionForeground: '#ffffff',
+          black: '#1a1a1a',
+          red: '#ff5f56',
+          green: '#5af78e',
+          yellow: '#f3f99d',
+          blue: '#57c7ff',
+          magenta: '#ff6ac1',
+          cyan: '#9aedfe',
+          white: '#e5e5e5',
+          brightBlack: '#686868',
+          brightRed: '#ff6e67',
+          brightGreen: '#5af78e',
+          brightYellow: '#f4f99d',
+          brightBlue: '#6eceff',
+          brightMagenta: '#ff92d0',
+          brightCyan: '#a4ffff',
+          brightWhite: '#ffffff'
         }
       });
 
@@ -123,9 +679,12 @@
 
       // Handle window resize
       window.addEventListener('resize', () => {
-        const newCols = Math.floor((window.innerWidth - padding) / charWidth);
-        const newRows = Math.floor((window.innerHeight - padding) / charHeight);
+        const newAvailableWidth = terminalWindow.clientWidth;
+        const newAvailableHeight = terminalWindow.clientHeight - titleBarHeight - statusBarHeight;
+        const newCols = Math.floor((newAvailableWidth - paddingH) / charWidth);
+        const newRows = Math.floor((newAvailableHeight - paddingV) / charHeight) - 2;
         term.resize(newCols, newRows);
+        updateTerminalSize(newCols, newRows);
       });
 
       const log = (text) => term.write(("\x1B[2m" + text + "\x1B[0m\n").replaceAll("\n", "\r\n"));
@@ -134,6 +693,7 @@
       // Check for SharedArrayBuffer support
       if (!window.crossOriginIsolated) {
         loadingEl.classList.add('hidden');
+        updateConnectionStatus('error', 'No COOP/COEP');
         log("Error: Cross-origin isolation not enabled.");
         log("SharedArrayBuffer is required for this terminal.");
         log("Please ensure the server sends correct COOP/COEP headers.");
@@ -141,11 +701,12 @@
       }
 
       try {
-        loadingText.textContent = "Compiling WebAssembly kernel...";
+        // Wait for boot animation to progress a bit before starting actual loading
+        await new Promise(resolve => setTimeout(resolve, 800));
+
         const worker_url = "linux-worker.js?v=" + wasm_linux_version;
         const vmlinux = await WebAssembly.compileStreaming(fetch("vmlinux.wasm?v=" + wasm_linux_version));
 
-        loadingText.textContent = "Loading initramfs...";
         const boot_cmdline =
           "maxcpus=3 nohz_full=0,2-63 root=/dev/ram0 rootfstype=ramfs init=/init console=hvc console=ttyS0";
 
@@ -155,33 +716,41 @@
         }
         const initrd = await initrd_request.arrayBuffer();
 
-        loadingText.textContent = "Booting Linux...";
+        // Wait for boot animation to complete
+        await new Promise(resolve => setTimeout(resolve, 600));
 
         // Hide loading screen and show terminal
         loadingEl.classList.add('hidden');
         term.focus();
 
+        // Update status
+        updateConnectionStatus('connected', 'Running');
+
         const os = await linux(worker_url, vmlinux, boot_cmdline, initrd, log, console_write);
         term.onData(data => os.key_input(data));
 
-        // Initialize networking proxy (configure URL for your deployment)
-        // For local development: ws://localhost:8080
-        // For production: wss://your-proxy-server.railway.app
+        // Initialize networking proxy
         const WS_PROXY_URL = window.location.hostname === 'localhost'
           ? 'ws://localhost:8080'
-          : 'wss://wasmlinux-production.up.railway.app';  // Your deployed proxy URL
+          : 'wss://wasmlinux-production.up.railway.app';
 
         if (os.initNetProxy(WS_PROXY_URL)) {
-          log('[Net] WebSocket proxy initialized');
+          updateConnectionStatus('connected', 'Net: Connected');
+        } else {
+          updateConnectionStatus('warning', 'Net: Unavailable');
         }
 
         // Initialize filesystem persistence (IndexedDB)
         if (await os.initFsPersist()) {
-          log('[FS] Filesystem persistence initialized');
+          updateFsStatus('synced', 'FS: Synced');
+        } else {
+          updateFsStatus('warning', 'FS: Not available');
         }
 
       } catch (error) {
         loadingEl.classList.add('hidden');
+        updateConnectionStatus('error', 'Failed');
+        updateFsStatus('error', 'FS: Error');
         log("Linux/Wasm failed: " + error.message);
         log(error.stack || "");
         throw error;
